@@ -1,0 +1,147 @@
+[
+  {
+    "data": {
+      "text": "ใช้ได้ดี",
+      "clean_text": "ใช้ได้ดี",
+      "score": "5"
+    },
+    "predictions": [
+      {
+        "model_version": "gemini-3.6-flash",
+        "result": [
+          {
+            "from_name": "emotion",
+            "to_name": "text",
+            "type": "choices",
+            "value": {
+              "choices": [
+                "Joy (ดีใจ)"
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "data": {
+      "text": "โอเคดี",
+      "clean_text": "โอเคดี",
+      "score": "5"
+    },
+    "predictions": [
+      {
+        "model_version": "gemini-3.6-flash",
+        "result": [
+          {
+            "from_name": "emotion",
+            "to_name": "text",
+            "type": "choices",
+            "value": {
+              "choices": [
+                "Joy (ดีใจ)"
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "data": {
+      "text": "ง่ายดี รอแอพไทยทำได้แบบนี้บ้าง",
+      "clean_text": "ง่ายดี รอแอพไทยทำได้แบบนี้บ้าง",
+      "score": "5"
+    },
+    "predictions": [
+      {
+        "model_version": "gemini-3.6-flash",
+        "result": [
+          {
+            "from_name": "emotion",
+            "to_name": "text",
+            "type": "choices",
+            "value": {
+              "choices": [
+                "Joy (ดีใจ)"
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "data": {
+      "text": "แอพดีทุกอย่าง แต่อยากให้เพิ่มโหมดมืดให้หน่อยค่ะ เวลาชอปกลางคืนมันแสบตาอ่ะ😂",
+      "clean_text": "แอพดีทุกอย่าง แต่อยากให้เพิ่มโหมดมืดให้หน่อยค่ะ เวลาชอปกลางคืนมันแสบตาอ่ะ:face_with_tears_of_joy:",
+      "score": "3"
+    },
+    "predictions": [
+      {
+        "model_version": "gemini-3.6-flash",
+        "result": [
+          {
+            "from_name": "emotion",
+            "to_name": "text",
+            "type": "choices",
+            "value": {
+              "choices": [
+                "Joy (ดีใจ)",
+                "Neutral (เฉยๆ)"
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "data": {
+      "text": "เป็นแอปที่มีคุณภาฟและเป็นโปรแกรมทีให้ความเรียบง่าย ใช้ประโยชน์มากที่สุด",
+      "clean_text": "เป็นแอปที่มีคุณภาฟและเป็นโปรแกรมทีให้ความเรียบง่าย ใช้ประโยชน์มากที่สุด",
+      "score": "5"
+    },
+    "predictions": [
+      {
+        "model_version": "gemini-3.6-flash",
+        "result": [
+          {
+            "from_name": "emotion",
+            "to_name": "text",
+            "type": "choices",
+            "value": {
+              "choices": [
+                "Joy (ดีใจ)"
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "data": {
+      "text": "ดีมากๆๆๆๆ",
+      "clean_text": "ดีมากๆๆๆๆ",
+      "score": "5"
+    },
+    "predictions": [
+      {
+        "model_version": "gemini-3.6-flash",
+        "result": [
+          {
+            "from_name": "emotion",
+            "to_name": "text",
+            "type": "choices",
+            "value": {
+              "choices": [
+                "Joy (ดีใจ)"
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

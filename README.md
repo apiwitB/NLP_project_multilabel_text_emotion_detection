@@ -1,4 +1,4 @@
-# โครงงาน: A Hybrid Stacked Ensemble Framework for Multilabel Emotion Detection in Thai Text
+# โครงงาน: A Hybrid Stacked Ensemble Framework for Multilabel Emotion Detection in Thai Text (Version 1 - v1)
 **เป้าหมาย:** พัฒนาระบบจำแนกอารมณ์แบบหลายป้ายกำกับ (Multi-label) สำหรับข้อความภาษาไทย โดยใช้เทคนิคการรวมโมเดล Transformer หลายตัว (Ensemble) เข้ากับ Meta-classifier 
 
 ---
@@ -50,6 +50,31 @@
 * **จัดการช่องโหว่:** ปรับแต่ง Hyperparameters เพื่อแก้ปัญหา Overfitting หรือความล่าช้าในการประมวลผล (Inference Time)
 
 ### Phase 6: การนำไปใช้งาน (Deployment & Reporting)
-* **สร้าง API:** ห่อระบบด้วย FastAPI หรือ Express.js เพื่อให้สามารถส่งข้อความผ่าน HTTP Request แล้วรับผลลัพธ์อารมณ์เป็น JSON คืนกลับมา
+* **สร้าง API:** ห่อระบบด้วย FastAPI เพื่อให้สามารถส่งข้อความผ่าน HTTP Request แล้วรับผลลัพธ์อารมณ์เป็น JSON คืนกลับมา
 * **วิเคราะห์ผล (Error Analysis):** ดึงประโยคที่โมเดลทายผิดมาวิเคราะห์สาเหตุ
 * **จัดทำเอกสาร:** สรุปผลการทดลอง อภิปรายข้อค้นพบ และเขียนรายงานโครงงาน
+
+---
+
+## 📌 สรุปสถานะและรายงานผลการทดลอง (Version 1 - v1)
+
+> **สถานะโครงงานปัจจุบัน:** สำเร็จในระดับ **v1 Prototype** (พัฒนาโมเดล Ensemble + Meta-Classifier + FastAPI สำเร็จครบทุก Phase)
+
+### 📊 รายงานผลการดำเนินงาน (v1 Summary)
+1. **สถาปัตยกรรม:** พัฒนาโครงสร้าง **Hybrid Stacked Ensemble** โดยใช้ 3 Base Models (`WangchanBERTa`, `mBERT`, `XLM-RoBERTa`) ส่งออก Probability Vector (7 อารมณ์) Concatenate รวมเป็น 21 Features แล้วใช้ **`Random Forest`** เป็น Meta-Classifier ตัวตัดสินใจหลัก
+2. **การนำไปใช้งาน (Deployment):** พัฒนา REST API ด้วย **FastAPI** (`app.py`) และมีฟังก์ชัน `predict_emotion()` พร้อมใช้งาน
+
+### ⚠️ ข้อค้นพบและวิเคราะห์ปัญหาใน v1 (Error Analysis & Limitations)
+จากการทดสอบและวิเคราะห์ผลการทำนาย พบว่า **โมเดลยังทำนายอารมณ์ได้ไม่ดีเท่าที่ควร** โดยมีข้อค้นพบสำคัญดังนี้:
+
+* **สาเหตุหลักมาจาก คุณภาพของชุดข้อมูล (Dataset Quality Issue / Label Noise):**
+  * ข้อมูลที่นำมาใช้อยู่ในสภาวะที่มี **Label Noise (การติดป้ายกำกับไม่ตรงกับความหมายจริง)** สูง
+  * **ตัวอย่างข้อผิดพลาดที่พบ:** ข้อความประเภทคำอุทานหรือประโยคก้ำกวม เช่นคำว่า *"อืมม..."* หรือ *"โอเค"* ซึ่งโดยธรรมชาติควรติดป้ายกำเป็น **`Neutral (เฉยๆ)`** แต่ใน Dataset กลับถูกบันทึกป้ายกำกับเป็น **`Joy (ดีใจ)`**
+  * ทำให้ Transformer Base Models และ Random Forest สับสนในการเรียนรู้ Pattern ความสัมพันธ์ระหว่างข้อความกับอารมณ์
+
+---
+
+## 🚀 แผนการปรับปรุงสำหรับเวอร์ชันถัดไป (v2 Roadmap)
+1. **Data Cleaning & Re-annotation:** ทำการตรวจสอบและแก้ไข Label Noise ในชุดข้อมูล โดยเน้นการจัดหมวดหมู่ข้อความก้ำกวมและคำอุทานใหม่ให้ถูกต้องตามบริบทจริง
+2. **Class Imbalance & Threshold Tuning:** ปรับปรุงน้ำหนัก `pos_weight` และปรับ Decision Threshold รายอารมณ์แยกตามความยากง่ายของแต่ละ Class
+3. **Data Augmentation:** เพิ่มชุดข้อมูลตัวอย่างสำหรับกลุ่มอารมณ์ที่มีจำนวนน้อย (Minority Classes) เพื่อลดการทำนายเอนเอียง (Bias)

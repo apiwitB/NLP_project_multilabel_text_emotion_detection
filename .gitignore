@@ -1,0 +1,20 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Python Cache & IDE
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+*.Zone.Identifier
+
+# Large Model Weights (> 100MB limit for GitHub)
+saved_models/*/*.safetensors
+saved_models/*/*.bin
+saved_models/*/*.pt
+saved_models/*.joblib
+*.safetensors
+*.bin
+*.pt
