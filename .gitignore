@@ -10,11 +10,16 @@ __pycache__/
 .ipynb_checkpoints/
 *.Zone.Identifier
 
-# Large Model Weights (> 100MB limit for GitHub)
+# Large Model Weights (>100MB limit for GitHub)
 saved_models/*/*.safetensors
 saved_models/*/*.bin
 saved_models/*/*.pt
 saved_models/*.joblib
+
+# Large Dataset files in goemotions (>100MB)
+goemotions/go_emotions_full.csv
+
+# Misc
 *.safetensors
 *.bin
 *.pt
