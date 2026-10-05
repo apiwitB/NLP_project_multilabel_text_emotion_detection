@@ -18,7 +18,7 @@ import pandas as pd
 
 # ── Config ──────────────────────────────────────────────────────────────────
 # ใช้ directory ของ script เป็น base เสมอ (ไม่ขึ้นกับ working directory)
-BASE_DIR         = Path(__file__).parent
+BASE_DIR         = Path(__file__).parent.parent
 INPUT_CSV        = BASE_DIR / "data/go_emotions_test.csv"
 TRANSLATED_FILE  = BASE_DIR / "data/full_text_translate_fixed.txt"   # ไฟล์แปลที่ fix แล้ว
 OUTPUT_CSV       = BASE_DIR / "data/go_emotions_test_with_translation.csv"

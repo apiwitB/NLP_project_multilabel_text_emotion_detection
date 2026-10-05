@@ -19,7 +19,7 @@ import re
 import io
 from pathlib import Path
 
-BASE_DIR   = Path(__file__).parent
+BASE_DIR   = Path(__file__).parent.parent
 INPUT_TXT  = BASE_DIR / "data/full_text_translate.txt"
 OUTPUT_TXT = BASE_DIR / "data/full_text_translate_fixed.txt"
 
@@ -108,11 +108,11 @@ def main():
     with OUTPUT_TXT.open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, quoting=csv.QUOTE_ALL)
         writer.writerow(["row_index", "text", "text_th"])
-        for new_idx, (_, text_eng, text_th) in enumerate(parsed_sorted):
-            writer.writerow([new_idx, text_eng, text_th])
+        for row_idx, text_eng, text_th in parsed_sorted:
+            writer.writerow([int(row_idx), text_eng, text_th])
 
     total = len(parsed_sorted)
-    print(f"🎉 เสร็จ! {total:,} แถว (reindexed 0–{total-1})")
+    print(f"🎉 เสร็จ! {total:,} แถว (คงค่า row_index เดิม)")
     print(f"   → {OUTPUT_TXT}")
 
 
