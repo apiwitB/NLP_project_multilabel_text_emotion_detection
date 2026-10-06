@@ -1,74 +1,63 @@
-# 🚀 Training Roadmap: Thai Multilabel Emotion Detection
-**อ้างอิง:** *A Hybrid Stacked Ensemble Learning Framework for Thai Multilabel Emotion Detection* + *GoEmotions: A Dataset of Fine-Grained Emotions*
+# 🚀 Training Roadmap: Thai Multilabel Emotion Detection (Fine-tuning on Thai Dataset)
+
+**อ้างอิงสถาปัตยกรรม:** *A Hybrid Stacked Ensemble Learning Framework for Thai Multilabel Emotion Detection* (Paper Architecture) + *GoEmotions Taxonomy (28 Emotions)*
 
 ---
 
-## 📊 ข้อมูลที่มี (ณ ตอนนี้)
+## 📊 ชุดข้อมูลที่ใช้ในการ Fine-tune
 
-| ไฟล์ | แถว | หมายเหตุ |
+| ไฟล์ | จำนวนแถว | หมายเหตุ |
 |---|---|---|
-| `goemotions/data/go_emotions_train.csv` | ~43,410 | ต้องแปลเพิ่ม (ยังไม่มี `text_th`) |
-| `goemotions/data/go_emotions_validation.csv` | ~5,426 | ต้องแปลเพิ่ม |
-| `goemotions/data/go_emotions_test_with_translation.csv` | ~5,428 | ✅ มี `text_th` แล้ว |
-| Columns | `text`, `text_th`, `labels`, `id` | labels = list เช่น `[25]` |
-| Label space | **28 อารมณ์** (GoEmotions taxonomy) | Index 0-27 |
+| `goemotions/data/go_emotions_test_with_translation.csv` | **5,427** (ใช้ได้ **5,131** แถวหลัง dropna) | ✅ มีคอลัมน์ `text_th` (ภาษาไทย) |
+| **Input Feature** | `text_th` | ข้อความภาษาไทย |
+| **Target Labels** | `labels` | Binary Matrix 28 คลาส (GoEmotions taxonomy, index 0-27) |
 
 ---
 
-## 🗺️ ภาพรวม Pipeline (ตาม Paper)
+## 🗺️ ภาพรวม Pipeline การเทรน (ตาม Paper Architecture)
 
 ```
-Raw GoEmotions CSV (EN+TH)
-        ↓
-[Step 1] Data Preparation & Label Binarization
-        ↓
-[Step 2] Fine-tune Base Models แยกกัน
-   ├── WangchanBERTa  → Prob vector (28-dim)
-   ├── mBERT          → Prob vector (28-dim)
-   └── XLM-RoBERTa    → Prob vector (28-dim)
-        ↓
-[Step 3] Extract OOF Predictions (Out-of-Fold)
-        ↓
-[Step 4] Train Meta-Classifier (Random Forest)
-   Input: Concatenate [28+28+28] = 84 features
-   Output: Binary multi-label prediction
-        ↓
-[Step 5] Evaluate (F1 Micro/Macro, Hamming Loss)
-        ↓
-[Step 6] Export & Deploy ใน src/app.py
+       GoEmotions Thai Data (go_emotions_test_with_translation.csv)
+                                ↓
+        [Step 1] Data Preprocessing & 28-Label Binarization
+                                ↓
+        [Step 2] Fine-tune Transformer Base Models ด้วย text_th
+           ├── 1. WangchanBERTa (airesearch/wangchanberta-base-att-spm-uncased) → Probs (28)
+           ├── 2. mBERT (bert-base-multilingual-cased)                           → Probs (28)
+           └── 3. XLM-RoBERTa (xlm-roberta-base)                                 → Probs (28)
+                                ↓
+        [Step 3] Concatenate Prediction Features [28 + 28 + 28 = 84 Dim]
+                                ↓
+        [Step 4] Train Level-2 Meta-Classifier (Random Forest)
+                                ↓
+        [Step 5] Evaluation & Per-Class Threshold Optimization (F1 Micro/Macro, Hamming Loss)
+                                ↓
+        [Step 6] Save Models & Deploy ใน src/app.py
 ```
 
 ---
 
-## 📋 ขั้นตอนละเอียด
+## 📋 รายละเอียดขั้นตอนการดำเนินงาน (Step-by-Step)
 
-### Step 1 — Data Preparation 🔧
+### Step 1 — การเตรียมข้อมูลภาษาไทย (Data Preparation & Label Encoding) 🔧
 
-**ปัญหา:** `go_emotions_train.csv` และ `go_emotions_validation.csv` ยังไม่มีคอลัมน์ `text_th`
-**ต้องทำ:**
-
-#### 1.1 แปล train/validation (ถ้ายังไม่มี)
+#### 1.1 โหลดข้อมูลและคัดกรองเฉพาะแถวที่มีภาษาไทย
 ```python
-# ใช้ script ที่มีอยู่แล้ว goemotions/scripts/translate_goemotions.py
-# หรือรัน Google Translate API สำหรับ train set (~43K rows)
-```
-> ⚠️ **ถ้ายังไม่มีงบแปล** → ใช้ `go_emotions_test_with_translation.csv` เป็น **validation/test set**  
-> แล้วแบ่ง train set จาก `go_emotions_train.csv` โดยใช้แค่ภาษาอังกฤษก่อน (mBERT และ XLM-RoBERTa รองรับ)
-
-#### 1.2 Binarize Labels (MultiLabelBinarizer)
-```python
-import ast
 import pandas as pd
+import ast
+import numpy as np
 from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.model_selection import train_test_split
 
+# 1. โหลดข้อมูล
 df = pd.read_csv("goemotions/data/go_emotions_test_with_translation.csv")
-df['labels'] = df['labels'].apply(ast.literal_eval)
 
-mlb = MultiLabelBinarizer(classes=list(range(28)))
-Y = mlb.fit_transform(df['labels'])  # shape: (N, 28)
+# 2. คัดกรองแถวที่ไม่มี text_th ออก
+df = df.dropna(subset=['text_th']).reset_index(drop=True)
+print(f"จำนวนข้อมูลภาษาไทยที่พร้อมใช้งาน: {len(df)} แถว")
 ```
 
-#### 1.3 Label Names (GoEmotions 28 classes)
+#### 1.2 Binarize Labels (28 Class GoEmotions Taxonomy)
 ```python
 EMOTION_LABELS = [
     "admiration", "amusement", "anger", "annoyance", "approval",
@@ -78,221 +67,236 @@ EMOTION_LABELS = [
     "optimism", "pride", "realization", "relief", "remorse",
     "sadness", "surprise", "neutral"
 ]
-# Index 0=admiration, ..., 27=neutral
+NUM_LABELS = len(EMOTION_LABELS)  # 28
+
+# แปลง string '[25]' เป็น list [25]
+df['labels_list'] = df['labels'].apply(ast.literal_eval)
+
+mlb = MultiLabelBinarizer(classes=list(range(28)))
+Y = mlb.fit_transform(df['labels_list'])  # Shape: (N, 28)
+X_texts = df['text_th'].tolist()
 ```
 
-#### 1.4 ตรวจ Class Imbalance
+#### 1.3 คำนวณ `pos_weight` สำหรับ Imbalanced Data (BCEWithLogitsLoss)
 ```python
-import matplotlib.pyplot as plt
-label_counts = Y.sum(axis=0)
-plt.bar(EMOTION_LABELS, label_counts)
-plt.xticks(rotation=90)
-# คาดว่า "neutral" (27) จะเยอะที่สุด, "grief"/"pride" จะน้อยมาก
+pos_counts = Y.sum(axis=0)
+neg_counts = len(df) - pos_counts
+pos_weight = neg_counts / (pos_counts + 1e-6)
+pos_weight_tensor = torch.FloatTensor(pos_weight)
+```
+
+#### 1.4 แบ่งข้อมูล Train / Validation / Test
+```python
+# แบ่ง 80% Train, 10% Val, 10% Test
+X_train_val, X_test, Y_train_val, Y_test = train_test_split(
+    X_texts, Y, test_size=0.10, random_state=42
+)
+X_train, X_val, Y_train, Y_val = train_test_split(
+    X_train_val, Y_train_val, test_size=0.1111, random_state=42  # 0.1111 * 0.9 ≈ 0.1
+)
+
+print(f"Train: {len(X_train)} | Val: {len(X_val)} | Test: {len(X_test)}")
 ```
 
 ---
 
-### Step 2 — Fine-tune Base Models 🤖
+### Step 2 — Fine-tune Base Models ด้วยภาษาไทย 🤖
 
-**ใช้ notebook:** `notebooks/04_base_models.ipynb`
+ Fine-tune Transformer Base Models ทั้ง 3 ตัวโดยใช้ **`text_th`** เพื่อเรียนรู้บริบทภาษาไทย:
 
-#### สถาปัตยกรรมแต่ละ Base Model
-```
-Input: text (ภาษาไทย หรือ EN ก็ได้สำหรับ mBERT/XLM)
-  ↓
-[Transformer Encoder]
-  ↓
-[CLS token] → Linear(hidden_size → 28)
-  ↓
-Sigmoid activation → 28 probabilities (0-1)
-  ↓
-BCEWithLogitsLoss (multi-label)
-```
+1. **WangchanBERTa** (`airesearch/wangchanberta-base-att-spm-uncased`) — โมเดลภาษาไทยเฉพาะทาง
+2. **mBERT** (`bert-base-multilingual-cased`) — Multilingual BERT
+3. **XLM-RoBERTa** (`xlm-roberta-base`) — Multilingual RoBERTa
 
-#### 2.1 WangchanBERTa (แนะนำสำหรับภาษาไทย)
-```python
-model_name = "airesearch/wangchanberta-base-att-spm-uncased"
-# ใช้ข้อมูล text_th เท่านั้น
-# max_length = 128 (ภาษาไทยประหยัด token กว่า EN)
-```
-
-#### 2.2 mBERT (Multilingual BERT)
-```python
-model_name = "bert-base-multilingual-cased"
-# ใช้ text_th หรือ text ก็ได้ (รองรับทั้งคู่)
-```
-
-#### 2.3 XLM-RoBERTa
-```python
-model_name = "xlm-roberta-base"
-# รองรับภาษาไทยได้ดี — ใช้ text_th
-```
-
-#### Hyperparameters แนะนำ (ตาม Paper)
-| Parameter | ค่า |
+#### Hyperparameters แนะนำ
+| Parameter | ค่าที่ตั้ง |
 |---|---|
 | Learning Rate | `2e-5` |
-| Batch Size | `16` หรือ `32` |
-| Epochs | `3-5` |
-| Max Length | `128` |
+| Batch Size | `16` |
+| Epochs | `3` - `5` |
+| Max Token Length | `128` (ภาษาไทยประหยัด Token) |
+| Loss Function | `BCEWithLogitsLoss(pos_weight=pos_weight)` |
 | Optimizer | AdamW |
-| Scheduler | Linear warmup (10% steps) |
-| Loss | `BCEWithLogitsLoss` |
-| Threshold | `0.5` (ปรับทีหลัง) |
 
-#### Training Loop สำคัญ
+#### PyTorch Training Implementation
 ```python
-from torch.nn import BCEWithLogitsLoss
+import torch
+from torch.utils.data import Dataset, DataLoader
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-criterion = BCEWithLogitsLoss(pos_weight=pos_weights)  # จัดการ class imbalance
-# pos_weight = (N_neg / N_pos) per label
+class ThaiEmotionDataset(Dataset):
+    def __init__(self, texts, labels, tokenizer, max_len=128):
+        self.texts = texts
+        self.labels = labels
+        self.tokenizer = tokenizer
+        self.max_len = max_len
+
+    def __len__(self):
+        return len(self.texts)
+
+    def __getitem__(self, item):
+        text = str(self.texts[item])
+        encoding = self.tokenizer(
+            text,
+            add_special_tokens=True,
+            max_length=self.max_len,
+            padding='max_length',
+            truncation=True,
+            return_attention_mask=True,
+            return_tensors='pt'
+        )
+        return {
+            'input_ids': encoding['input_ids'].flatten(),
+            'attention_mask': encoding['attention_mask'].flatten(),
+            'labels': torch.FloatTensor(self.labels[item])
+        }
+
+def train_base_model(model_name, use_fast=True):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=use_fast)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_name,
+        num_labels=28,
+        problem_type="multi_label_classification"
+    ).to(device)
+    
+    train_ds = ThaiEmotionDataset(X_train, Y_train, tokenizer)
+    val_ds   = ThaiEmotionDataset(X_val, Y_val, tokenizer)
+    
+    train_loader = DataLoader(train_ds, batch_size=16, shuffle=True)
+    val_loader   = DataLoader(val_ds, batch_size=16, shuffle=False)
+    
+    criterion = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight_tensor.to(device))
+    optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
+    
+    # Train Loop (3 Epochs)
+    for epoch in range(3):
+        model.train()
+        for batch in train_loader:
+            optimizer.zero_grad()
+            input_ids = batch['input_ids'].to(device)
+            mask = batch['attention_mask'].to(device)
+            labels = batch['labels'].to(device)
+            
+            outputs = model(input_ids, attention_mask=mask)
+            loss = criterion(outputs.logits, labels)
+            loss.backward()
+            optimizer.step()
+            
+    return model, tokenizer
 ```
 
 ---
 
-### Step 3 — Extract Out-of-Fold (OOF) Predictions 🔄
+### Step 3 — Extraction ของ Probability Features (84 Dimensions) 🔄
 
-> **ทำไมต้อง OOF?**  
-> ป้องกัน Data Leakage ตอน train Meta-Classifier  
-> ถ้าใช้ predictions จาก train set ตรง ๆ โมเดลจะ overfit แน่นอน
+ดึง Probability outputs (ผ่าน Sigmoid) จาก Base Models ทั้ง 3 ตัว เพื่อนำมาเรียงต่อกัน (Concatenate):
 
 ```python
-from sklearn.model_selection import KFold
+def extract_probabilities(model, tokenizer, texts, device):
+    model.eval()
+    ds = ThaiEmotionDataset(texts, np.zeros((len(texts), 28)), tokenizer)
+    loader = DataLoader(ds, batch_size=32, shuffle=False)
+    probs = []
+    with torch.no_grad():
+        for batch in loader:
+            input_ids = batch['input_ids'].to(device)
+            mask = batch['attention_mask'].to(device)
+            out = model(input_ids, attention_mask=mask)
+            prob = torch.sigmoid(out.logits).cpu().numpy()
+            probs.append(prob)
+    return np.concatenate(probs, axis=0)  # Shape: (N, 28)
 
-kf = KFold(n_splits=5, shuffle=True, random_state=42)
-oof_probs_wangchan = np.zeros((len(df_train), 28))
-oof_probs_mbert    = np.zeros((len(df_train), 28))
-oof_probs_xlmr     = np.zeros((len(df_train), 28))
+# รวม 3 โมเดล → 84 features
+prob_wangchan = extract_probabilities(model_wangchan, tok_wangchan, X_train, device)
+prob_mbert    = extract_probabilities(model_mbert, tok_mbert, X_train, device)
+prob_xlmr     = extract_probabilities(model_xlmr, tok_xlmr, X_train, device)
 
-for fold, (train_idx, val_idx) in enumerate(kf.split(df_train)):
-    # fine-tune แต่ละ model บน train_idx
-    # predict บน val_idx → เก็บใส่ oof_probs[val_idx]
-    pass
-
-# ตอน inference ใช้ full model (trained on all data)
+X_train_meta = np.concatenate([prob_wangchan, prob_mbert, prob_xlmr], axis=1) # Shape: (N, 84)
 ```
 
 ---
 
-### Step 4 — Train Meta-Classifier (Stacked Ensemble) 🌲
+### Step 4 — Train Level-2 Meta-Classifier (Random Forest) 🌲
 
-**ใช้ notebook:** `notebooks/05_ensemble.ipynb`
+ใช้ **Random Forest** (ผ่าน `MultiOutputClassifier`) เทรนบน Feature Matrix 84 มิติ:
 
 ```python
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multioutput import MultiOutputClassifier
-import numpy as np
 
-# Concatenate OOF predictions → 84 features
-X_meta = np.concatenate([
-    oof_probs_wangchan,  # (N, 28)
-    oof_probs_mbert,     # (N, 28)
-    oof_probs_xlmr       # (N, 28)
-], axis=1)               # → (N, 84)
-
-# Train Random Forest
-rf = MultiOutputClassifier(
-    RandomForestClassifier(n_estimators=200, n_jobs=-1, random_state=42)
+rf_base = RandomForestClassifier(
+    n_estimators=200,
+    max_depth=None,
+    class_weight='balanced',
+    random_state=42,
+    n_jobs=-1
 )
-rf.fit(X_meta, Y_train)  # Y_train shape: (N, 28)
+rf_meta = MultiOutputClassifier(rf_base)
+rf_meta.fit(X_train_meta, Y_train)
 ```
-
-> 📝 **Note:** RF ใน v1 เดิมใช้ `predict_proba` แยกทีละ label  
-> → ต้องใช้ `MultiOutputClassifier` หรือ loop predict ทีละ class
 
 ---
 
-### Step 5 — Evaluation 📊
+### Step 5 — Evaluation & Threshold Tuning 📊
+
+ประเมินผลบน Test Set (10% ที่แยกไว้):
 
 ```python
 from sklearn.metrics import f1_score, hamming_loss, classification_report
 
-# Predict ด้วย Ensemble
-Y_pred = rf.predict(X_test_meta)  # binary (0/1)
+# ดึง probability บน Test Set
+test_wangchan = extract_probabilities(model_wangchan, tok_wangchan, X_test, device)
+test_mbert    = extract_probabilities(model_mbert, tok_mbert, X_test, device)
+test_xlmr     = extract_probabilities(model_xlmr, tok_xlmr, X_test, device)
 
-print("Micro F1:", f1_score(Y_test, Y_pred, average='micro'))
-print("Macro F1:", f1_score(Y_test, Y_pred, average='macro'))
-print("Hamming Loss:", hamming_loss(Y_test, Y_pred))
-print(classification_report(Y_test, Y_pred, target_names=EMOTION_LABELS))
-```
+X_test_meta = np.concatenate([test_wangchan, test_mbert, test_xlmr], axis=1)
 
-#### Threshold Tuning (สำคัญมาก!)
-```python
-# ทดลอง threshold ต่างกันแต่ละ class
-thresholds = np.arange(0.3, 0.7, 0.05)
-best_thresh = {}
-for i, label in enumerate(EMOTION_LABELS):
-    best_f1 = 0
-    for t in thresholds:
-        pred = (proba_pos[:, i] >= t).astype(int)
-        f1 = f1_score(Y_test[:, i], pred)
-        if f1 > best_f1:
-            best_f1 = f1
-            best_thresh[label] = t
+# Predict ด้วย Random Forest
+Y_pred = rf_meta.predict(X_test_meta)
+
+print("Micro F1 Score:", f1_score(Y_test, Y_pred, average='micro'))
+print("Macro F1 Score:", f1_score(Y_test, Y_pred, average='macro'))
+print("Hamming Loss:  ", hamming_loss(Y_test, Y_pred))
+print("\nClassification Report:\n", classification_report(Y_test, Y_pred, target_names=EMOTION_LABELS, zero_division=0))
 ```
 
 ---
 
-### Step 6 — Export & Update API 🚀
+### Step 6 — Export Models & Update FastAPI Deployment 🚀
 
-หลัง train เสร็จ save โมเดลไว้ที่ `saved_models/`
+บันทึกโมเดลทั้งหมดลงโฟลเดอร์ `saved_models/`:
 
 ```python
-import joblib
-# save rf model
-joblib.dump(rf, "saved_models/random_forest_meta.joblib")
+import joblib, json, os
 
-# save label classes (28 GoEmotions labels)
-import json
-with open("saved_models/label_classes.json", "w") as f:
-    json.dump(EMOTION_LABELS, f)
-```
-
-อัปเดต [`src/app.py`](file:///home/apiwit/NLP_project/src/app.py) line 27:
-```python
-# เดิม
 SAVE_DIR = "saved_models"
-# ถ้า run จาก src/ ให้เปลี่ยนเป็น
-SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "saved_models")
+os.makedirs(SAVE_DIR, exist_ok=True)
+
+# 1. บันทึก Transformer Base Models & Tokenizers
+model_wangchan.save_pretrained(f"{SAVE_DIR}/wangchan_model")
+tok_wangchan.save_pretrained(f"{SAVE_DIR}/wangchan_tokenizer")
+
+model_mbert.save_pretrained(f"{SAVE_DIR}/mbert_model")
+tok_mbert.save_pretrained(f"{SAVE_DIR}/mbert_tokenizer")
+
+model_xlmr.save_pretrained(f"{SAVE_DIR}/xlm_roberta_model")
+tok_xlmr.save_pretrained(f"{SAVE_DIR}/xlm_roberta_tokenizer")
+
+# 2. บันทึก Meta-Classifier
+joblib.dump(rf_meta, f"{SAVE_DIR}/random_forest_meta.joblib")
+
+# 3. บันทึก 28 Emotion Labels
+with open(f"{SAVE_DIR}/label_classes.json", "w", encoding="utf-8") as f:
+    json.dump(EMOTION_LABELS, f, ensure_ascii=False, indent=2)
+
+print("✅ บันทึกโมเดลทั้งหมดสำเร็จ สามารถรัน uvicorn src.app:app ได้ทันที!")
 ```
 
 ---
 
-## ⚡ ลำดับการทำงานจริง (Quick Start)
+## ⚡ สรุปสิ่งที่ต้องอัปเดตและรันจริง
 
-```
-1. [ตอนนี้]  ตรวจ train/validation มี text_th ไหม? 
-             ถ้าไม่มี → รัน translate script ก่อน
-             ถ้าไม่อยากรอ → ใช้ EN + mBERT/XLM-RoBERTa ไปก่อน
-
-2. [Step 1]  เปิด notebooks/04_base_models.ipynb
-             → แก้ให้รองรับ 28 classes (v1 เดิมใช้ 7)
-             → เพิ่ม BCEWithLogitsLoss + sigmoid
-
-3. [Step 2]  Fine-tune ทีละโมเดล บันทึก checkpoint
-
-4. [Step 3]  Extract OOF predictions ทั้ง 3 โมเดล
-
-5. [Step 4]  เปิด notebooks/05_ensemble.ipynb
-             → train Random Forest บน 84 features
-
-6. [Step 5]  Evaluate + Threshold tuning
-
-7. [Step 6]  Save models → อัปเดต src/app.py
-```
-
----
-
-## ⚠️ สิ่งสำคัญที่ต้องระวัง
-
-> [!WARNING]
-> **v1 เดิมใช้ 7 labels** — ตอนนี้จะเปลี่ยนเป็น **28 labels (GoEmotions)**  
-> ต้องแก้ทั้ง base model output layer, RF, และ `saved_models/label_classes.json`
-
-> [!TIP]
-> Train ทีละโมเดลแล้ว save checkpoint — GPU/CPU อาจใช้เวลานาน  
-> WangchanBERTa เหมาะกับข้อความไทยที่สุด ให้ผลดีที่สุด
-
-> [!NOTE]
-> ถ้ายังไม่มี `text_th` สำหรับ train set → ใช้ `text` (EN) กับ mBERT + XLM-RoBERTa ได้เลย  
-> WangchanBERTa ต้องการ TH เท่านั้น
+1. **ใช้ข้อมูลภาษาไทย**: `goemotions/data/go_emotions_test_with_translation.csv` (คอลัมน์ `text_th`)
+2. **ปรับปรุง Notebook**: อัปเดต `notebooks/04_base_models.ipynb` และ `notebooks/05_ensemble.ipynb` ให้ใช้ข้อมูลภาษาไทย 28 อารมณ์
+3. **รันสคริปต์การเทรน**: รัน Base Models ทั้ง 3 ตัว -> สกัด 84-dim Features -> เทรน Random Forest Meta-Classifier -> บันทึกเข้า `saved_models/`

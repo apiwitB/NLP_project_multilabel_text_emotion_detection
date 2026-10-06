@@ -1,25 +1,109 @@
-# Virtual Environment
+# ==============================================================================
+# Python & Virtual Environments (สภาพแวดล้อมจำลองและไฟล์ระบบ Python)
+# ==============================================================================
 .venv/
 venv/
+env/
 ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Python Cache & IDE
+# ==============================================================================
+# Python Cache & Bytecode (แคชของ Python ป้องกันไฟล์ขยะ)
+# ==============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==============================================================================
+# Jupyter Notebook Checkpoints & Temp Files (จุดบันทึกชั่วคราวของ Notebook)
+# ==============================================================================
 .ipynb_checkpoints/
-*.Zone.Identifier
+*-checkpoint.ipynb
+.hydra/
 
-# Large Model Weights (>100MB limit for GitHub)
-saved_models/*/*.safetensors
-saved_models/*/*.bin
-saved_models/*/*.pt
-saved_models/*.joblib
-
-# Large Dataset files in goemotions (>100MB)
-goemotions/go_emotions_full.csv
-
-# Misc
+# ==============================================================================
+# Model Weights & Large ML Artifacts (ไฟล์โมเดลขนาดใหญ่ที่อัปขึ้น GitHub ไม่ได้ > 100MB)
+# ==============================================================================
 *.safetensors
 *.bin
 *.pt
+*.pth
+*.joblib
+*.pkl
+*.pickle
+*.h5
+*.onnx
+*.tflite
+*.ckpt
+*.model
+*.matrix
+
+# โฟลเดอร์เก็บโมเดลและผลลัพธ์การเทรน
+saved_models/
+saved_models_ekman/
+saved_models_class_weight/
+**/saved_models*/
+results/
+runs/
+wandb/
+tb_logs/
+
+# ==============================================================================
+# Datasets & Heavy Data Files (ไฟล์ชุดข้อมูลขนาดใหญ่)
+# ==============================================================================
+*.parquet
+*.feather
+*.hd5
+*.sqlite
+*.sqlite3
+goemotions/go_emotions_full.csv
+data/*.csv
+data/*.parquet
+
+# ==============================================================================
+# Logs & Compressed Archives (ไฟล์บันทึกและไฟล์บีบอัด)
+# ==============================================================================
+*.log
+*.out
+*.err
+*.zip
+*.tar
+*.gz
+*.7z
+*.rar
+*.bz2
+
+# ==============================================================================
+# Environment Variables & Secrets (ไฟล์ความลับและ API Keys)
+# ==============================================================================
+.env
+.env.*
+*.pem
+*.key
+
+# ==============================================================================
+# IDE, Editor & OS System Files (ไฟล์ตั้งค่าโปรแกรมแก้ไขโค้ดและระบบปฏิบัติการ)
+# ==============================================================================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.Zone.Identifier
