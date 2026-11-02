@@ -67,7 +67,7 @@ wandb/
 tb_logs/
 
 # ==============================================================================
-# Datasets & Heavy Data Files (ไฟล์ชุดข้อมูลขนาดใหญ่)
+# Datasets & Heavy Data Files (ไฟล์ชุดข้อมูลขนาดใหญ่และโฟลเดอร์ chunk ชั่วคราว)
 # ==============================================================================
 *.parquet
 *.feather
@@ -77,6 +77,17 @@ tb_logs/
 goemotions/go_emotions_full.csv
 data/*.csv
 data/*.parquet
+
+# Chunk directories & intermediate translation files
+goemotions/data/*chunks*/
+goemotions/data/train_chunks/
+goemotions/data/train_chunks-thai/
+goemotions/data/validation_chunks/
+goemotions/data/missing_train_translations_fix.txt
+
+# Large intermediate full translation files
+goemotions/data/full_train_text_translate.csv
+goemotions/data/full_validation_text_translate.csv
 
 # ==============================================================================
 # Logs & Compressed Archives (ไฟล์บันทึกและไฟล์บีบอัด)

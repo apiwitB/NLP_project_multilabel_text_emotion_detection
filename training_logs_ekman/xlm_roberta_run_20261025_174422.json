@@ -1,0 +1,49 @@
+{
+  "model_key": "xlm_roberta",
+  "timestamp": "20261025_174422",
+  "config": {
+    "epochs": 5,
+    "lr": 5e-05,
+    "batch_size": 16,
+    "scheduler_type": "cosine",
+    "warmup_ratio": 0.1,
+    "load_existing": false
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.5107071840025172,
+      "val_loss": 1.52976856897859,
+      "lr": 4.849231551964771e-05,
+      "is_best": true
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.518419546464303,
+      "val_loss": 1.5190002167926115,
+      "lr": 3.7500000000000003e-05,
+      "is_best": true
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.5143142368262887,
+      "val_loss": 1.5180430811994217,
+      "lr": 2.0658795558326743e-05,
+      "is_best": true
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.5093753829807066,
+      "val_loss": 1.5145026659264285,
+      "lr": 5.848888922025553e-06,
+      "is_best": true
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.5079560009714603,
+      "val_loss": 1.515422257605721,
+      "lr": 0.0,
+      "is_best": false
+    }
+  ]
+}

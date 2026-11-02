@@ -1,0 +1,42 @@
+{
+  "model_key": "wangchan",
+  "timestamp": "20261025_152227",
+  "config": {
+    "epochs": 10,
+    "lr": 5e-05,
+    "batch_size": 16,
+    "scheduler_type": "cosine",
+    "warmup_ratio": 0.1,
+    "load_existing": false
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.2808469375025813,
+      "val_loss": 0.9442436065743951,
+      "lr": 5e-05,
+      "is_best": true
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.9643263778290331,
+      "val_loss": 0.8608886593404939,
+      "lr": 4.849231551964771e-05,
+      "is_best": true
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.0541175962614504,
+      "val_loss": 1.5348210972898146,
+      "lr": 4.415111107797445e-05,
+      "is_best": false
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.5212775896644453,
+      "val_loss": 1.5156220860341016,
+      "lr": 3.7500000000000003e-05,
+      "is_best": false
+    }
+  ]
+}

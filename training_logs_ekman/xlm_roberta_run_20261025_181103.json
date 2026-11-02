@@ -1,0 +1,28 @@
+{
+  "model_key": "xlm_roberta",
+  "timestamp": "20261025_181103",
+  "config": {
+    "epochs": 5,
+    "lr": 4e-05,
+    "batch_size": 16,
+    "scheduler_type": "linear",
+    "warmup_ratio": 0.3,
+    "load_existing": true
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.5106959985123019,
+      "val_loss": 1.523296379867722,
+      "lr": 2.6666666666666667e-05,
+      "is_best": false
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.513825412128634,
+      "val_loss": 1.5166779402424306,
+      "lr": 3.4285714285714284e-05,
+      "is_best": false
+    }
+  ]
+}

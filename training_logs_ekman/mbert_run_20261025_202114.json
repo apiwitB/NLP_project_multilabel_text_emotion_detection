@@ -1,0 +1,35 @@
+{
+  "model_key": "mbert",
+  "timestamp": "20261025_202114",
+  "config": {
+    "epochs": 10,
+    "lr": 1.8e-05,
+    "batch_size": 16,
+    "scheduler_type": "cosine",
+    "warmup_ratio": 0.1,
+    "load_existing": true
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.951648539943825,
+      "val_loss": 1.0751499985947328,
+      "lr": 1.8e-05,
+      "is_best": false
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.9496896745844324,
+      "val_loss": 1.0627303506521617,
+      "lr": 1.7457233587073175e-05,
+      "is_best": false
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.8881962229617835,
+      "val_loss": 1.0307811727418619,
+      "lr": 1.5894399988070803e-05,
+      "is_best": false
+    }
+  ]
+}
